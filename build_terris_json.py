@@ -169,7 +169,7 @@ def build_json(groups, all_by_prefix, brand: str, name_template: str, attribute_
             groups[prefix][rep_color]
             if rep_color else all_by_prefix.get(prefix, [])
         )
-
+      
         # Determinar si es producto simple (solo un color) o variable
         is_simple = len(colors) <= 1
         group_type = "simple" if is_simple else "variable"
@@ -178,12 +178,21 @@ def build_json(groups, all_by_prefix, brand: str, name_template: str, attribute_
             "group_sku": group_sku_value,
             "type": group_type,
             "sku": group_sku_value,
+            "superior": [] ,
             "nombre": var_nombre,
-            "atributos": "" if is_simple else attribute_name,
+            "nombre del atributo 1": "" if is_simple else attribute_name,
             "valor(es) del atributo 1": "" if is_simple else valores_attr,
             "imagenes_variable": imagenes_variable,
+            "WooGallery Variation Images":"",
+            "publicado": "1",
+            "¿esta destacado": "0",
+            "visibilidad en el catalogo": "visible",
+            "existencias": "1",
+            "permitir reservas de productos agotados": "0",
+            "atributo visible": "1",
             "variations": []
         }
+        
 
         for color in colors:
             var_sku = f"{brand}-{prefix}-{color}"
@@ -193,9 +202,18 @@ def build_json(groups, all_by_prefix, brand: str, name_template: str, attribute_
             variation_obj = {
                 "type": "variation",
                 "sku": var_sku,
+                "superior": var_sku,
                 "nombre": f"{name_template.format(prefix=prefix)} {color.replace('-', ' ')}",
+                "nombre del atributo 1": attribute_name,
                 "valor(es) del atributo": color,
-                "imagenes": groups[prefix][color]
+                "imagenes":groups[prefix][color],
+                "WooGallery Variation Images": groups[prefix][color],
+                "publicado": "1",
+                "¿esta destacado": "0",
+                "visibilidad en el catalogo": "visible",
+                "existencias": "1",
+                "permitir reservas de productos agotados": "0",
+                "atributo visible": "1",
             }
             group_obj["variations"].append(variation_obj)
 
@@ -255,3 +273,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
