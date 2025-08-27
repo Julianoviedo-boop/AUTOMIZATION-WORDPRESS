@@ -6,7 +6,7 @@ Uso:
     python json_to_excel_terris.py output.json salida.csv
 
 Opciones:
-    --attr-name-in-variations    Si se indica, también rellena "atributos" en variaciones.
+    --attr-name-in-variations    Si se indica, también rellena "nombre del atributo 1" en variaciones.
     --sheet-name NOMBRE          Nombre de la hoja Excel (por defecto: "Productos").
     --sep ","                   Separador para CSV (por defecto: ",").
 
@@ -23,10 +23,18 @@ import pandas as pd
 COLUMNS = [
     "Tipo",
     "SKU",
+    "superior",
+    "WooGallery Variation Images",
     "Nombre",
-    "atributos",
+    "nombre del atributo 1",
     "Valor(es) del atributo 1",
     "Imágenes",
+    "publicado",
+    "¿esta destacado",
+    "visibilidad en el catalogo",
+    "existencias",
+    "permitir reservas de productos agotados",
+    "atributo visible",
 ]
 
 # -------------------- Utilidades --------------------
@@ -73,16 +81,26 @@ def rows_from_payload(payload: List[Dict[str, Any]], attr_name_in_variations: bo
                 "Tipo": "simple",
                 "SKU": str(group.get("sku", "")),
                 "Nombre": str(group.get("nombre", "")),
-                "atributos": "",
+                "nombre del atributo 1": "",
                 "Valor(es) del atributo 1": "",
                 "Imágenes": ", ".join(imgs),
+                "publicado": "1",
+            "¿esta destacado": "0",
+            "visibilidad en el catalogo": "visible",
+            "existencias": "1",
+            "permitir reservas de productos agotados": "0",
+            "atributo visible": "1",
             })
             continue
 
         # Detectar nombre y valores del atributo en el grupo (case-insensitive, varias opciones)
         grp_attr_name = pick_ci(
             group,
-            ["atributos", "atributo", "nombre_atributo"],
+            [
+                "nombre del atributo 1",
+                "atributo",
+                "nombre_atributo",
+            ],
             default="",
         )
         grp_attr_values = pick_ci(
@@ -98,13 +116,22 @@ def rows_from_payload(payload: List[Dict[str, Any]], attr_name_in_variations: bo
         grp_attr_values_list = listify(grp_attr_values)
 
         # Fila VARIABLE
+        # Nota: "WooGallery Variation Images" usa la misma lógica que "Imágenes" para variable,
+        # ya que ambas columnas requieren las imágenes de la variable principal.
         rows.append({
             "Tipo": "variable",
             "SKU": str(group.get("sku", "")),
+            "superior": "",
             "Nombre": str(group.get("nombre", "")),
-            "atributos": str(grp_attr_name),
+            "nombre del atributo 1": str(grp_attr_name),
             "Valor(es) del atributo 1": " , ".join(grp_attr_values_list),
             "Imágenes": ", ".join(listify(group.get("imagenes_variable"))),
+            "publicado": "1",
+            "¿esta destacado": "0",
+            "visibilidad en el catalogo": "visible",
+            "existencias": "1",
+            "permitir reservas de productos agotados": "0",
+            "atributo visible": "1",
         })
 
         # Filas VARIATIONS
@@ -125,10 +152,20 @@ def rows_from_payload(payload: List[Dict[str, Any]], attr_name_in_variations: bo
             rows.append({
                 "Tipo": "variation",
                 "SKU": str(var.get("sku", "")),
+                "superior": str(group.get("sku", "")),
                 "Nombre": str(var.get("nombre", "")),
-                "atributos": str(grp_attr_name) if attr_name_in_variations else "",
+                 "nombre del atributo 1": str(grp_attr_name),
                 "Valor(es) del atributo 1": str(var_attr_value),
                 "Imágenes": ", ".join(listify(var.get("imagenes"))),
+                "WooGallery Variation Images": ", ".join(
+                    listify(var.get("imagenes")) or listify(group.get("imagenes_variable"))
+                ),
+                "publicado": "1",
+                "¿esta destacado": "0",
+                "visibilidad en el catalogo": "visible",
+                "existencias": "1",
+                "permitir reservas de productos agotados": "0",
+                "atributo visible": "1",
             })
 
     return rows
@@ -138,9 +175,6 @@ def rows_from_payload(payload: List[Dict[str, Any]], attr_name_in_variations: bo
 
 def save_table(rows: List[Dict[str, str]], output_path: str, sheet_name: str = "Productos", sep: str = ",") -> None:
     df = pd.DataFrame(rows, columns=COLUMNS)
-    # Asegurar tipos string para evitar cast no deseado en Excel
-    for col in COLUMNS:
-        df[col] = df[col].astype(str)
 
     ext = os.path.splitext(output_path)[1].lower()
     if ext == ".xlsx":
@@ -176,3 +210,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
