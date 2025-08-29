@@ -30,11 +30,13 @@ COLUMNS = [
     "Valor(es) del atributo 1",
     "Imágenes",
     "publicado",
-    "¿esta destacado",
+    "¿esta destacado?",
     "visibilidad en el catalogo",
-    "existencias",
-    "permitir reservas de productos agotados",
-    "atributo visible",
+    "¿existencias?",
+    "¿permitir reservas de productos agotados?",
+    "visibilidad del atributo",
+    "atributo global",
+    "precio"
 ]
 
 # -------------------- Utilidades --------------------
@@ -83,13 +85,15 @@ def rows_from_payload(payload: List[Dict[str, Any]], attr_name_in_variations: bo
                 "Nombre": str(group.get("nombre", "")),
                 "nombre del atributo 1": "",
                 "Valor(es) del atributo 1": "",
-                "Imágenes": ", ".join(imgs),
+                "Imágenes": ",".join(imgs),
                 "publicado": "1",
-            "¿esta destacado": "0",
+            "¿esta destacado?": "0",
             "visibilidad en el catalogo": "visible",
-            "existencias": "1",
-            "permitir reservas de productos agotados": "0",
-            "atributo visible": "1",
+            "¿existencias?": "1",
+            "¿permitir reservas de productos agotados?": "0",
+            "visibilidad del atributo": "1",
+            "atributo global": "1",
+            "precio": "98000"
             })
             continue
 
@@ -125,13 +129,15 @@ def rows_from_payload(payload: List[Dict[str, Any]], attr_name_in_variations: bo
             "Nombre": str(group.get("nombre", "")),
             "nombre del atributo 1": str(grp_attr_name),
             "Valor(es) del atributo 1": " , ".join(grp_attr_values_list),
-            "Imágenes": ", ".join(listify(group.get("imagenes_variable"))),
+            "Imágenes": ",".join(listify(group.get("imagenes_variable"))),
             "publicado": "1",
-            "¿esta destacado": "0",
+            "¿esta destacado?": "0",
             "visibilidad en el catalogo": "visible",
-            "existencias": "1",
-            "permitir reservas de productos agotados": "0",
-            "atributo visible": "1",
+            "¿existencias?": "1",
+            "¿permitir reservas de productos agotados?": "0",
+            "visibilidad del atributo": "1",
+            "atributo global": "1",
+            "precio": "98000"
         })
 
         # Filas VARIATIONS
@@ -156,16 +162,18 @@ def rows_from_payload(payload: List[Dict[str, Any]], attr_name_in_variations: bo
                 "Nombre": str(var.get("nombre", "")),
                  "nombre del atributo 1": str(grp_attr_name),
                 "Valor(es) del atributo 1": str(var_attr_value),
-                "Imágenes": ", ".join(listify(var.get("imagenes"))),
-                "WooGallery Variation Images": ", ".join(
+                "Imágenes": ",".join(listify(var.get("imagenes"))),
+                "WooGallery Variation Images": ",".join(
                     listify(var.get("imagenes")) or listify(group.get("imagenes_variable"))
                 ),
                 "publicado": "1",
-                "¿esta destacado": "0",
+                "¿esta destacado?": "0",
                 "visibilidad en el catalogo": "visible",
-                "existencias": "1",
-                "permitir reservas de productos agotados": "0",
-                "atributo visible": "1",
+                "¿existencias?": "1",
+                "¿permitir reservas de productos agotados?": "0",
+                "visibilidad del atributo": "1",
+                "atributo global": "1",
+                "precio": "98000"
             })
 
     return rows
@@ -210,5 +218,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
