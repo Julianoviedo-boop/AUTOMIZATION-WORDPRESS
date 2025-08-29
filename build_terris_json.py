@@ -60,7 +60,7 @@ from typing import Dict, List, Tuple
 # ----------------------- utilidades -----------------------
 def natural_key(s: str):
     """Clave de ordenamiento natural: 'img2' < 'img10'."""
-    return [int(t) if t.isdigit() else t.lower() for t in re.findall(r"\d+|\D+", s)]
+    return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]
 
 NORMALIZE_SPACE_UNDERSCORE = re.compile(r"[\s_]+")
 TRAILING_SEQ = re.compile(r"([\- _]?(?:\(\d+\)|\d+))+$", re.IGNORECASE)  # quita (1), -2, _3
@@ -104,6 +104,17 @@ def normalize_color(color_raw: str, ignore_case: bool = True) -> str:
         c = c.upper()
     return c
 
+def custom_order(url: str) -> tuple:
+
+    filename = unquote(os.path.basename(url))
+    stem = EXT_PATTERN.sub("", filename)
+    stem = SCALED_TAG.sub("", stem)
+    m = re.search(r"(?:[\- _]?\((\d+)\)|[\- _]?(\d+))$", stem)
+    if m:
+        num = int(m.group(1) or m.group(2))
+        return (1, num)   # con sufijo, ordenar por número
+    return (0, 0)         # sin sufijo, va primero
+
 def collect_groups(urls: List[str], ignore_case: bool = True):
     """Agrupa por prefix y color, devolviendo estructura interna."""
     groups: Dict[str, Dict[str, List[str]]] = defaultdict(lambda: defaultdict(list))
@@ -121,10 +132,8 @@ def collect_groups(urls: List[str], ignore_case: bool = True):
 
         prefix, color_raw = extract_prefix_color(stem_clean)
         if not prefix or not color_raw:
-            # si no calza, intentamos con stem original sin limpiar secuencia
             prefix2, color_raw2 = extract_prefix_color(stem)
             if not prefix2 or not color_raw2:
-                # saltar (o se podría loggear)
                 continue
             prefix, color_raw = prefix2, color_raw2
 
@@ -132,15 +141,15 @@ def collect_groups(urls: List[str], ignore_case: bool = True):
         groups[prefix][color].append(url)
         all_by_prefix[prefix].append(url)
 
-    # ordenar las URLs por orden natural
+    # ordenar las URLs con nuestro orden personalizado
     for p in groups:
         for c in groups[p]:
-            groups[p][c] = sorted(groups[p][c], key=natural_key)
-        all_by_prefix[p] = sorted(all_by_prefix[p], key=natural_key)
+            groups[p][c] = sorted(groups[p][c], key=custom_order)
+        all_by_prefix[p] = sorted(all_by_prefix[p], key=custom_order)
 
     return groups, all_by_prefix
 
-def build_json(groups, all_by_prefix, brand: str, name_template: str, attribute_name: str = "color") -> List[dict]:
+def build_json(groups, all_by_prefix, brand: str, name_template: str, attribute_name: str = "pa_color") -> List[dict]:
     """Construye la salida JSON por grupo.
 
     ACTUALIZADO:
@@ -160,7 +169,7 @@ def build_json(groups, all_by_prefix, brand: str, name_template: str, attribute_
         # Valores del atributo: excluir el color representativo para que aparezcan solo las variaciones
         valores_attr = [c for c in colors if c != rep_color] if rep_color else colors
 
-        group_sku_value = f"{brand}-{prefix}-{rep_color}" if rep_color else f"{brand}-{prefix}"
+        group_sku_value = f"{brand}-{prefix}" if rep_color else f"{brand}-{prefix}"
         var_nombre = (
             f"{name_template.format(prefix=prefix)} {rep_color.replace('-', ' ')}"
             if rep_color else name_template.format(prefix=prefix)
@@ -190,6 +199,7 @@ def build_json(groups, all_by_prefix, brand: str, name_template: str, attribute_
             "existencias": "1",
             "permitir reservas de productos agotados": "0",
             "atributo visible": "1",
+            "atributo global": "1",
             "variations": []
         }
         
@@ -214,6 +224,7 @@ def build_json(groups, all_by_prefix, brand: str, name_template: str, attribute_
                 "existencias": "1",
                 "permitir reservas de productos agotados": "0",
                 "atributo visible": "1",
+                "atributo global": "0"
             }
             group_obj["variations"].append(variation_obj)
 
@@ -228,7 +239,7 @@ def main():
     ap.add_argument("--brand", default="TERRIS", help="Prefijo de marca para el SKU (por defecto TERRIS)")
     ap.add_argument(
         "--name-template",
-        default="Chaqueta Técnica TERRIS - Modelo {prefix}",
+        default="Chaqueta TERRIS - {prefix}",
         help="Plantilla de nombre para el producto variable y base de variaciones. Use {prefix}"
     )
     ap.add_argument("--attribute-name", default="color", help="Nombre del atributo (por defecto 'color')")
@@ -273,4 +284,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
